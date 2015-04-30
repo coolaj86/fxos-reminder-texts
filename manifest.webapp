@@ -1,0 +1,46 @@
+{
+  "version": "0.2.0",
+  "name": "Trash Talk",
+  "description": "Text the garbage out of your roommates!",
+  "launch_path": "/index.html",
+  "icons": {
+    "16": "/img/icons/icon16x16.png",
+    "48": "/img/icons/icon48x48.png",
+    "60": "/img/icons/icon60x60.png",
+    "128": "/img/icons/icon128x128.png"
+  },
+  "developer": {
+    "name": "Your name",
+    "url": "http://example.com"
+  },
+  "type": "certified",
+  "permissions": {
+    "systemXHR": {
+      "description": "Required to load remote content"
+    },
+    "sms": {
+      "description": "Required to send SMS text messages"
+    },
+    "alarms": {
+      "description": "Required to schedule text messages"
+    }
+  },
+  "installs_allowed_from": [
+    "*"
+  ],
+  "locales": {
+    "es": {
+      "name": "Aplicación privilegiada",
+      "description": "Demuestra cómo utilizar permisos para cargar contenido remoto",
+      "permissions": {
+        "systemXHR": {
+          "description": "Requerido para cargar contenido remoto"
+        }
+      }
+    }
+  },
+  "messages": [
+    { "alarm": "/index.html" }
+  ],
+  "default_locale": "en"
+}
