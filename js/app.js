@@ -40,11 +40,14 @@ window.addEventListener('DOMContentLoaded', function() {
     tpls.contactsDom.innerHTML = html;
   }
    
-  function setAlarm() {
+  function setAlarm(d) {
     // state is used to guard against system level alarms
     var state = Math.random().toString();
+    localStorage.setItem('state', state);
     // moment defaults to current Locale, not UTC
     // isoweek starts on monday regardless of locale
+
+    /*
     var d = moment().startOf('isoweek')
       // extra minute is because... I dunno... somehow a minute gets lost
       .add(1, 'days').add('12', 'hours').add(7, 'hours').add(1, 'minutes')
@@ -63,10 +66,23 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     
     //d = moment().add(60, 'seconds').toDate();
-    localStorage.setItem('state', state);
-    
-    console.log(d.toString());
-    return navigator.mozAlarms.add(d, "honorTimezone", { state: state });
+    */
+
+    var result = navigator.mozAlarms.getAll();
+    result.addEventListener('success', function (ev) {
+      var alarms = ev.target.result;
+
+      alarms.forEach(function (alarm) { 
+        navigator.mozAlarms.remove(alarm.id);
+      });
+
+      navigator.mozAlarms.add(d, "honorTimezone", { state: state });
+    });
+    result.addEventListener('error', function () {
+      // no idea what to do
+    });
+    //console.log(d.toString());
+    //return navigator.mozAlarms.add(d, "honorTimezone", { state: state });
   }
 
   function pad(c) {
@@ -98,7 +114,8 @@ window.addEventListener('DOMContentLoaded', function() {
         + pad(date.getMinutes())
         ;
       } else if (alarms.length === 0) {
-        setAlarm();
+        date = moment().add(1, 'weeks');
+        setAlarm(date);
       } else {
         console.log(ev);
         window.alert("something went wrong");
@@ -114,13 +131,14 @@ window.addEventListener('DOMContentLoaded', function() {
       var state = localStorage.getItem('state');
       var msg = window.localStorage.getItem('msg');
       var residents = JSON.parse(window.localStorage.getItem('residents') || []);
+      var nextWeek = moment(mozAlarm.date).add(1, 'weeks');
       
       if (state !== data.state) {
         // this may be a system-level alarm
         return;
       }
       
-      setAlarm();
+      setAlarm(nextWeek);
       
       if (Date.now() - mozAlarm.date.valueOf() > (16 * 60 * 60 * 1000)) {
         window.alert("missed an alarm");
@@ -190,6 +208,7 @@ window.addEventListener('DOMContentLoaded', function() {
   document.body.addEventListener('click', function (ev) {
     //var contactDom = document.querySelector('.js-contact-add');
     var result;
+    var dateStr;
 
     if (-1 !== ev.target.className.indexOf("js-contact-clear")) {
       document.querySelector('.js-contact-name').value = '';
@@ -226,7 +245,21 @@ window.addEventListener('DOMContentLoaded', function() {
     if (-1 !== ev.target.className.indexOf("js-message-save")) {
       console.log('message-save');
       var message = document.querySelector('.js-message').value;
+
+      console.log('date', document.querySelector('.js-date').value);
+      console.log('time', document.querySelector('.js-time').value);
+
+      dateStr = document.querySelector('.js-date').value
+        + 'T' + document.querySelector('.js-time').value + ':00'
+        //+ (new Date().toString().replace(/.*([\-\+]\d+).*/, '$1')) 
+        ;
+
+      console.log('dateStr');
+      console.log(dateStr);
+      console.log(new Date(dateStr).toString());
+
       localStorage.setItem('msg', message);
+      setAlarm(new Date(dateStr));
       template();
       return;
     }
