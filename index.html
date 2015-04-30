@@ -55,8 +55,8 @@
         </div>
       </div>
 
-      <div class="row">
-        <form class="js-form">
+      <form class="js-form">
+        <div class="row">
           <div class="js-contact-add">
             <div class="col-xs-12">
               <div class="form-group">
@@ -70,11 +70,32 @@
             </div>
             <div class="col-xs-12">
               <div class="form-group">
+                <button type="button" class="btn btn-default js-contact-clear pull-left">Clear</button>
                 <button type="button" class="btn btn-success js-contact-save pull-right">Add Contact</button>
               </div>
             </div>
           </div>
+        </div>
 
+        <div class="row">
+          <div class="col-xs-12">
+            <label>Repeating Reminder Date</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-6">
+            <div class="form-group">
+              <input type="date" class="form-control js-date" />
+            </div>
+          </div>
+          <div class="col-xs-6">
+            <div class="form-group">
+              <input type="time" class="form-control js-time" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
           <div class="col-xs-12">
             <div class="form-group">
               <label>Message</label>
@@ -82,8 +103,8 @@
             </div>
             <button type="button" class="btn btn-default form-control js-message-save" data-l10n-id="send">Save Message</button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
 
     </div>
   </body>

@@ -46,7 +46,8 @@ window.addEventListener('DOMContentLoaded', function() {
     // moment defaults to current Locale, not UTC
     // isoweek starts on monday regardless of locale
     var d = moment().startOf('isoweek')
-      .add(1, 'days').add('12', 'hours').add(7, 'hours')
+      // extra minute is because... I dunno... somehow a minute gets lost
+      .add(1, 'days').add('12', 'hours').add(7, 'hours').add(1, 'minutes')
       .toDate()
       ;
     
@@ -68,14 +69,34 @@ window.addEventListener('DOMContentLoaded', function() {
     return navigator.mozAlarms.add(d, "honorTimezone", { state: state });
   }
 
+  function pad(c) {
+    c = c.toString();
+    if (c.length < 2) {
+      c = '0' + c;
+    }
+    return c;
+  }
+
   function initAlarm() {
     var alarmsResult = navigator.mozAlarms.getAll();
 
     alarmsResult.addEventListener('success', function (ev) {
       var alarms = ev.target.result;
+      var date;
 
       if (alarms.length === 1) {
+        date = alarms[0].date;
         // all is well, nothing to do
+        //window.alert('data: ' + JSON.stringify(alarms[0]).date);
+        document.querySelector('.js-date').value = 
+          date.getFullYear() + '-'
+        + pad(date.getMonth() + 1) + '-' 
+        + pad(date.getDate())
+        ;
+        document.querySelector('.js-time').value =
+          date.getHours() + ':'
+        + pad(date.getMinutes())
+        ;
       } else if (alarms.length === 0) {
         setAlarm();
       } else {
@@ -149,24 +170,38 @@ window.addEventListener('DOMContentLoaded', function() {
 
   function deleteContact(contactIndex) {
     var residents = JSON.parse(window.localStorage.getItem('residents') || []);
+    var deleted;
+
     residents.some(function (contact, i) {
       if (i.toString() === contactIndex.toString()) {
-        residents.splice(i, 1);
+        deleted = residents.splice(i, 1)[0];
         return true;
       }
     });
-    console.log('DELETE residents');
-    console.log(residents);
+
+    //console.log('DELETE residents');
+    //console.log(residents);
+    //console.log(deleted);
     window.localStorage.setItem('residents', JSON.stringify(residents));
+
+    return deleted;
   }
 
   document.body.addEventListener('click', function (ev) {
     //var contactDom = document.querySelector('.js-contact-add');
     var result;
 
+    if (-1 !== ev.target.className.indexOf("js-contact-clear")) {
+      document.querySelector('.js-contact-name').value = '';
+      document.querySelector('.js-contact-tel').value = '';
+      return;
+    }
+
     if (-1 !== ev.target.className.indexOf("js-delete")) {
       console.log('DELETE', ev.target.dataset.contactId);
-      deleteContact(ev.target.dataset.contactId);
+      result = deleteContact(ev.target.dataset.contactId);
+      document.querySelector('.js-contact-name').value = result.name;
+      document.querySelector('.js-contact-tel').value = result.tel;
       template();
       return;
     }
