@@ -16,9 +16,26 @@ window.addEventListener('DOMContentLoaded', function() {
     template();
   }
 
+  /*
+  function getContacts() {
+    var cursor = window.navigator.mozContacts.getAll(options);
+
+    cursor.addEventListener('success', function () {
+      console.log("Contact found: " + this.result.name);
+
+      // Once we found a file we check if there is other results
+      if (!this.done) {
+        // Then we move to the next result, which call the
+        // cursor success with the next file as result.
+        this.continue();
+      }
+    });
+  }
+  */
+
   function template() {
-    var msg = window.localStorage.getItem('msg');
-    var residents = JSON.parse(window.localStorage.getItem('residents') || []);
+    var msg = window.localStorage.getItem('msg') || '';
+    var residents = JSON.parse(window.localStorage.getItem('residents') || '[]');
 
     document.querySelector('.js-message').value = msg;
     //var contactsDom = document.querySelector('.js-contacts');
@@ -39,43 +56,30 @@ window.addEventListener('DOMContentLoaded', function() {
 
     tpls.contactsDom.innerHTML = html;
   }
-   
+
+  function deleteAllAlarms(alarms) {
+    alarms.forEach(function (alarm) {
+      navigator.mozAlarms.remove(alarm.id);
+    });
+  }
+
   function setAlarm(d) {
+    if (!d || !d.valueOf()) {
+      window.alert("Error: no date");
+      return;
+    }
+
     // state is used to guard against system level alarms
     var state = Math.random().toString();
     localStorage.setItem('state', state);
     // moment defaults to current Locale, not UTC
     // isoweek starts on monday regardless of locale
 
-    /*
-    var d = moment().startOf('isoweek')
-      // extra minute is because... I dunno... somehow a minute gets lost
-      .add(1, 'days').add('12', 'hours').add(7, 'hours').add(1, 'minutes')
-      .toDate()
-      ;
-    
-    console.log(d.toString());
-    
-    if (d.valueOf() < Date.now()) {
-      console.log("This tuesday has passed");
-      d = moment().endOf('isoweek')
-        .add(1, 'days').add('12', 'hours').add(7, 'hours')
-        .toDate()
-        ;
-      console.log(d.toString());
-    }
-    
-    //d = moment().add(60, 'seconds').toDate();
-    */
-
     var result = navigator.mozAlarms.getAll();
     result.addEventListener('success', function (ev) {
       var alarms = ev.target.result;
 
-      alarms.forEach(function (alarm) { 
-        navigator.mozAlarms.remove(alarm.id);
-      });
-
+      deleteAllAlarms(alarms);
       navigator.mozAlarms.add(d, "honorTimezone", { state: state });
     });
     result.addEventListener('error', function () {
@@ -93,7 +97,19 @@ window.addEventListener('DOMContentLoaded', function() {
     return c;
   }
 
-  function initAlarm() {
+  function templateAlarm(date) {
+    document.querySelector('.js-date').value =
+      date.getFullYear() + '-'
+    + pad(date.getMonth() + 1) + '-'
+    + pad(date.getDate())
+    ;
+    document.querySelector('.js-time').value =
+      date.getHours() + ':'
+    + pad(date.getMinutes())
+    ;
+  }
+
+  function initAlarm(date) {
     var alarmsResult = navigator.mozAlarms.getAll();
 
     alarmsResult.addEventListener('success', function (ev) {
@@ -104,24 +120,19 @@ window.addEventListener('DOMContentLoaded', function() {
         date = alarms[0].date;
         // all is well, nothing to do
         //window.alert('data: ' + JSON.stringify(alarms[0]).date);
-        document.querySelector('.js-date').value = 
-          date.getFullYear() + '-'
-        + pad(date.getMonth() + 1) + '-' 
-        + pad(date.getDate())
-        ;
-        document.querySelector('.js-time').value =
-          date.getHours() + ':'
-        + pad(date.getMinutes())
-        ;
-      } else if (alarms.length === 0) {
+        templateAlarm(date);
+      } else {
+        if (alarms.length !== 0) {
+          console.log(ev);
+          window.alert("something went wrong");
+          deleteAllAlarms(alarms);
+        }
+
         date = moment().add(1, 'weeks');
         setAlarm(date);
-      } else {
-        console.log(ev);
-        window.alert("something went wrong");
-      }  
+      }
     });
-    
+
     alarmsResult.addEventListener('error', function (err) {
       console.error(err);
     });
@@ -130,64 +141,73 @@ window.addEventListener('DOMContentLoaded', function() {
       var data = mozAlarm.data;
       var state = localStorage.getItem('state');
       var msg = window.localStorage.getItem('msg');
-      var residents = JSON.parse(window.localStorage.getItem('residents') || []);
-      var nextWeek = moment(mozAlarm.date).add(1, 'weeks');
-      
+      var residents = JSON.parse(window.localStorage.getItem('residents') || '[]');
+      var nextWeek = moment(mozAlarm.date).add(1, 'weeks').toDate();
+
       if (state !== data.state) {
         // this may be a system-level alarm
         return;
       }
-      
+
+      console.log('nextWeek');
+      console.log(nextWeek);
       setAlarm(nextWeek);
-      
+
       if (Date.now() - mozAlarm.date.valueOf() > (16 * 60 * 60 * 1000)) {
         window.alert("missed an alarm");
         return;
       }
-      
+
       console.log('mozAlarm');
       console.log('id:', mozAlarm.id);
-      console.log('date:', mozAlarm.date.toString());
+      console.log('date:', mozAlarm.date);
+      console.log('date (string):', mozAlarm.date.toString());
       console.log('respectTimezone:', mozAlarm.respectTimezone);
       console.log('data:', mozAlarm.data);
-      
+      console.log('\n\n\n');
+
       residents.forEach(function (resident) {
         sendMessage(resident.tel, msg);
       });
-    });    
+
+      template();
+      templateAlarm(nextWeek);
+    });
   }
-  
+
   function sendMessage(number, message) {
+    console.log("THIS EVENT IS HAPPENING!!!", number, message);
+
     var result = navigator.mozMobileMessage.send(number, message);
-  
+
     result.addEventListener('success', function () {
       console.log('success', number);
       // window.alert("Congrats! Sent the message!");
     });
-  
+
     result.addEventListener('error', function (err) {
       console.error('error');
       console.error(err);
       window.alert("Suxorz! Send FAILED!");
     });
+
+    console.log("\n\n\n");
   }
-  
-  initTemplate();
-  initAlarm();
 
   function addContact(contact) {
+    console.log('addContact', contact);
     if (!contact.name || !contact.tel) {
       return false;
     }
 
-    var residents = JSON.parse(window.localStorage.getItem('residents') || []);
+    var residents = JSON.parse(window.localStorage.getItem('residents') || '[]');
     residents.push(contact);
     window.localStorage.setItem('residents', JSON.stringify(residents));
     return true;
   }
 
   function deleteContact(contactIndex) {
-    var residents = JSON.parse(window.localStorage.getItem('residents') || []);
+    var residents = JSON.parse(window.localStorage.getItem('residents') || '[]');
     var deleted;
 
     residents.some(function (contact, i) {
@@ -251,12 +271,13 @@ window.addEventListener('DOMContentLoaded', function() {
 
       dateStr = document.querySelector('.js-date').value
         + 'T' + document.querySelector('.js-time').value + ':00'
-        //+ (new Date().toString().replace(/.*([\-\+]\d+).*/, '$1')) 
+        //+ (new Date().toString().replace(/.*([\-\+]\d+).*/, '$1'))
         ;
 
       console.log('dateStr');
       console.log(dateStr);
       console.log(new Date(dateStr).toString());
+      console.log("\n\n\n");
 
       localStorage.setItem('msg', message);
       setAlarm(new Date(dateStr));
@@ -264,4 +285,7 @@ window.addEventListener('DOMContentLoaded', function() {
       return;
     }
   });
+
+  initTemplate();
+  initAlarm();
 });
