@@ -1,2 +1,2 @@
-# fxos-reminder-texts
-Send scheduled reminder texts to friends, roommates, family members, whatever.
+# Moved
+### [fxos-reminder-texts](https://git.daplie.com/coolaj86/fxos-reminder-texts) is now at [git.daplie.com/coolaj86/fxos-reminder-texts](https://git.daplie.com/coolaj86/fxos-reminder-texts)
